@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>شبیه‌ساز مرغ ماینکرافت</title>
+    <style>
+        /* استایل‌های کلی صفحه */
+        :root {
+            --sky-color: #87CEEB;
+            --grass-color: #7EC850;
+            --chicken-size: 50px;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: linear-gradient(to bottom, var(--sky-color) 0%, #a1dffb 70%, var(--grass-color) 70%, var(--grass-color) 100%);
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            height: 100vh;
+        }
+        
+        /* پیام راهنما در بالای صفحه */
+        .info {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            text-align: center;
+            z-index: 100;
+        }
+
+        /* کانتینر مرغ برای موقعیت‌یابی و انیمیشن */
+        #chicken-container {
+            position: absolute;
+            width: var(--chicken-size);
+            height: calc(var(--chicken-size) * 1.2);
+            left: 50%;
+            bottom: 30vh; /* شروع از روی چمن */
+            transform: translateX(-50%);
+            transition: transform 0.2s ease-out; /* انیمیشن نرم پرش */
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        /* انیمیشن پرش */
+        #chicken-container.jump {
+            transform: translateY(-80px) scale(1.1);
+        }
+
+        /* خود مرغ و اعضای بدنش */
+        .chicken {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.4s;
+        }
+
+        .chicken.facing-left {
+            transform: rotateY(180deg);
+        }
+
+        .chicken * {
+            position: absolute;
+            background-color: #F0F0F0;
+            border: 1px solid #a0a0a0;
+            box-sizing: border-box;
+        }
+
+        /* اعضای بدن مرغ */
+        .head {
+            width: 40%;
+            height: 34%;
+            left: 30%;
+            top: -5%;
+            background-color: #e0e0e0;
+        }
+
+        .eye {
+            width: 15%;
+            height: 15%;
+            background-color: black;
+            border: none;
+            top: 30%;
+        }
+
+        .eye.left { left: 15%; }
+        .eye.right { right: 15%; }
+
+        .beak {
+            width: 20%;
+            height: 15%;
+            background-color: #FFC300;
+            border-color: #c89b00;
+            left: 40%;
+            top: 45%;
+        }
+
+        .wattle {
+            width: 16%;
+            height: 18%;
+            background-color: #C70039;
+            border-color: #a0002d;
+            left: 42%;
+            top: 60%;
+            border-radius: 0 0 4px 4px;
+        }
+
+        .body {
+            width: 100%;
+            height: 60%;
+            top: 25%;
+        }
+        
+        .wing {
+            width: 20%;
+            height: 70%;
+            top: 10%;
+            left: -10%;
+            background-color: #d8d8d8;
+            transform-origin: top right;
+        }
+
+        .leg {
+            width: 18%;
+            height: 35%;
+            background-color: #FFC300;
+            border-color: #c89b00;
+            bottom: -20%;
+            z-index: -1;
+            transform-origin: top center;
+        }
+
+        .leg.left { left: 20%; }
+        .leg.right { right: 20%; }
+        
+        /* انیمیشن راه رفتن */
+        #chicken-container.walk .leg.left {
+            animation: walk-left 0.5s infinite linear;
+        }
+
+        #chicken-container.walk .leg.right {
+            animation: walk-right 0.5s infinite linear;
+        }
+        
+        @keyframes walk-left {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(30deg); }
+        }
+
+        @keyframes walk-right {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(-30deg); }
+        }
+        
+        /* استایل تخم مرغ */
+        .egg {
+            position: absolute;
+            width: 20px;
+            height: 25px;
+            background-color: #fffbe8;
+            border: 1px solid #e0dac7;
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            z-index: 5;
+            transition: all 2s ease-in, opacity 1s 2s ease-out;
+            animation: fall 0.5s cubic-bezier(0.55, 0.085, 0.68, 0.53);
+        }
+        
+        /* انیمیشن افتادن تخم مرغ */
+        @keyframes fall {
+            from {
+                transform: translateY(-30px) scale(0.8);
+            }
+            to {
+                transform: translateY(0) scale(1);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="info">برای پریدن و تخم گذاشتن، روی مرغ کلیک کنید!</div>
+
+    <!-- کانتینر اصلی مرغ -->
+    <div id="chicken-container" class="walk">
+        <div class="chicken">
+            <div class="head">
+                <div class="eye left"></div>
+                <div class="eye right"></div>
+            </div>
+            <div class="beak"></div>
+            <div class="wattle"></div>
+            <div class="body">
+                 <div class="wing"></div>
+            </div>
+            <div class="leg left"></div>
+            <div class="leg right"></div>
+        </div>
+    </div>
+
+    <script>
+        const chickenContainer = document.getElementById('chicken-container');
+        const chicken = chickenContainer.querySelector('.chicken');
+
+        // متغیرهای مربوط به حرکت
+        let posX = window.innerWidth / 2;
+        let speed = 2;
+        let direction = 1; // 1 یعنی به راست, -1 یعنی به چپ
+        let isWalking = true;
+        
+        // حرکت دادن مرغ
+        function moveChicken() {
+            if (!isWalking) return;
+
+            // بررسی برخورد با لبه‌های صفحه
+            const rect = chickenContainer.getBoundingClientRect();
+            if (rect.right >= window.innerWidth - 20 && direction === 1) {
+                direction = -1; // تغییر جهت به چپ
+                chicken.classList.add('facing-left');
+            } else if (rect.left <= 20 && direction === -1) {
+                direction = 1; // تغییر جهت به راست
+                chicken.classList.remove('facing-left');
+            }
+            
+            posX += speed * direction;
+            chickenContainer.style.left = `${posX}px`;
+            
+            requestAnimationFrame(moveChicken);
+        }
+        
+        // تغییر تصادفی حالت (راه رفتن یا ایستادن)
+        setInterval(() => {
+            isWalking = Math.random() > 0.3; // 70% احتمال راه رفتن
+            if (isWalking) {
+                chickenContainer.classList.add('walk');
+                 // اگر در حالت ایستاده بود، دوباره انیمیشن را فعال کن
+                if (animationFrameId === null) {
+                    animationFrameId = requestAnimationFrame(moveChicken);
+                }
+            } else {
+                chickenContainer.classList.remove('walk');
+                // انیمیشن را متوقف کن
+                 if (animationFrameId !== null) {
+                    cancelAnimationFrame(animationFrameId);
+                    animationFrameId = null;
+                }
+            }
+        }, 3000); // هر 3 ثانیه یکبار تصمیم می‌گیرد
+        
+
+        // مدیریت رویداد کلیک
+        chickenContainer.addEventListener('click', () => {
+            // پرش
+            chickenContainer.classList.add('jump');
+            setTimeout(() => {
+                chickenContainer.classList.remove('jump');
+            }, 400); // مدت زمان انیمیشن پرش
+
+            // تخم گذاشتن
+            layEgg();
+        });
+
+        // تابع ساخت و نمایش تخم مرغ
+        function layEgg() {
+            const egg = document.createElement('div');
+            egg.className = 'egg';
+            
+            const rect = chickenContainer.getBoundingClientRect();
+            // موقعیت تخم مرغ را زیر مرغ تنظیم کن
+            egg.style.left = `${rect.left + (rect.width / 2) - 10}px`;
+            egg.style.bottom = `calc(30vh - 25px)`; // دقیقا روی چمن
+
+            document.body.appendChild(egg);
+
+            // تخم مرغ بعد از چند ثانیه محو می‌شود
+            setTimeout(() => {
+                egg.style.opacity = '0';
+                setTimeout(() => {
+                    egg.remove();
+                }, 1000);
+            }, 3000);
+        }
+
+        // شروع حرکت
+        let animationFrameId = requestAnimationFrame(moveChicken);
+
+    </script>
+</body>
+</html>
