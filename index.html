@@ -4,31 +4,84 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>شبیه‌ساز مرغ ماینکرافت</title>
+    <!-- Vazirmatn Font -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css">
     <style>
         /* استایل‌های کلی صفحه */
         :root {
             --sky-color: #87CEEB;
             --grass-color: #7EC850;
+            --dirt-color: #9B7653;
             --chicken-size: 50px;
+            --mario-size: 60px;
         }
 
         body {
             margin: 0;
             overflow: hidden;
-            background: linear-gradient(to bottom, var(--sky-color) 0%, #a1dffb 70%, var(--grass-color) 70%, var(--grass-color) 100%);
-            font-family: 'Arial', sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: flex-end;
+            background-color: var(--sky-color);
+            font-family: 'Vazirmatn', Arial, sans-serif;
             height: 100vh;
+            image-rendering: pixelated; /* برای حفظ ظاهر پیکسلی */
         }
         
-        /* پیام راهنما در بالای صفحه */
-        .info {
+        /* زمین ماینکرافتی */
+        .ground {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 30vh;
+            z-index: 1;
+        }
+
+        .ground::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2vh;
+            background: #8DE75A; /* لایه رویی چمن */
+        }
+        
+        .grass {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, var(--grass-color) 0%, var(--grass-color) 7%, var(--dirt-color) 7%, var(--dirt-color) 100%);
+        }
+
+        /* ابرها */
+        .cloud {
+            position: absolute;
+            background-color: #ffffff;
+            border-radius: 5px;
+            opacity: 0.9;
+            animation: move-cloud linear infinite;
+        }
+        .cloud-1 { top: 15%; width: 120px; height: 30px; left: -150px; animation-duration: 40s; }
+        .cloud-2 { top: 25%; width: 80px; height: 20px; left: -200px; animation-duration: 55s; animation-delay: -10s; }
+        .cloud-3 { top: 20%; width: 150px; height: 40px; left: -250px; animation-duration: 70s; animation-delay: -25s; }
+        .cloud::before, .cloud::after {
+            content: '';
+            position: absolute;
+            background-color: #ffffff;
+            border-radius: 5px;
+        }
+        .cloud-1::before { width: 40px; height: 40px; top: -20px; left: 30px; }
+        .cloud-1::after { width: 50px; height: 50px; top: -15px; right: 20px; }
+        .cloud-2::before { width: 30px; height: 30px; top: -15px; left: 15px; }
+        .cloud-3::before { width: 60px; height: 60px; top: -30px; left: 40px; }
+        
+        @keyframes move-cloud {
+            from { transform: translateX(0); }
+            to { transform: translateX(calc(100vw + 300px)); }
+        }
+
+        /* پیام راهنما و امتیاز */
+        .info, #score {
             position: absolute;
             top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
             background-color: rgba(0, 0, 0, 0.5);
             color: white;
             padding: 10px 20px;
@@ -36,263 +89,248 @@
             font-size: 1.2rem;
             text-align: center;
             z-index: 100;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+        }
+        .info {
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        #score {
+            left: 20px;
+            transition: transform 0.2s ease;
+        }
+        #score.updated {
+            transform: scale(1.1);
         }
 
-        /* کانتینر مرغ برای موقعیت‌یابی و انیمیشن */
+        /* کانتینر مرغ */
         #chicken-container {
             position: absolute;
             width: var(--chicken-size);
             height: calc(var(--chicken-size) * 1.2);
             left: 50%;
-            bottom: 30vh; /* شروع از روی چمن */
+            bottom: 30vh;
             transform: translateX(-50%);
-            transition: transform 0.2s ease-out; /* انیمیشن نرم پرش */
+            transition: transform 0.2s ease-out;
             cursor: pointer;
             z-index: 10;
         }
-
-        /* انیمیشن پرش */
+        
+        /* انیمیشن پرش (ارتفاع بیشتر) */
         #chicken-container.jump {
-            transform: translateY(-80px) scale(1.1);
+            transform: translateY(-150px) scale(1.1);
         }
 
-        /* خود مرغ و اعضای بدنش */
         .chicken {
-            width: 100%;
-            height: 100%;
+            width: 100%; height: 100%; position: relative;
+            transform-style: preserve-3d; transition: transform 0.4s;
+        }
+        .chicken.facing-left { transform: rotateY(180deg); }
+        .chicken * { position: absolute; background-color: #F0F0F0; border: 1px solid #a0a0a0; box-sizing: border-box; }
+        .head { width: 40%; height: 34%; left: 30%; top: -5%; background-color: #e0e0e0; }
+        .eye { width: 15%; height: 15%; background-color: black; border: none; top: 30%; }
+        .eye.left { left: 15%; } .eye.right { right: 15%; }
+        .beak { width: 20%; height: 15%; background-color: #FFC300; border-color: #c89b00; left: 40%; top: 45%; }
+        .wattle { width: 16%; height: 18%; background-color: #C70039; border-color: #a0002d; left: 42%; top: 60%; border-radius: 0 0 4px 4px; }
+        .body { width: 100%; height: 60%; top: 25%; }
+        .wing { width: 20%; height: 70%; top: 10%; left: -10%; background-color: #d8d8d8; transform-origin: top right; }
+        .leg { width: 18%; height: 35%; background-color: #FFC300; border-color: #c89b00; bottom: -20%; z-index: -1; transform-origin: top center; }
+        .leg.left { left: 20%; } .leg.right { right: 20%; }
+
+        #chicken-container.walk .leg.left { animation: walk-left 0.5s infinite linear; }
+        #chicken-container.walk .leg.right { animation: walk-right 0.5s infinite linear; }
+        @keyframes walk-left { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(30deg); } }
+        @keyframes walk-right { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-30deg); } }
+
+        /* استایل تخم مرغ */
+        .egg {
+            position: absolute; width: 20px; height: 25px;
+            background-color: #fffbe8; border: 1px solid #e0dac7;
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            z-index: 5;
+            transition: opacity 1s 2s ease-out;
+            animation: fall 0.5s cubic-bezier(0.55, 0.085, 0.68, 0.53);
+        }
+        @keyframes fall {
+            from { transform: translateY(-30px) scale(0.8); }
+            to { transform: translateY(0) scale(1); }
+        }
+        
+        /* استایل سوپر ماریو */
+        #mario-container {
+            position: absolute;
+            width: var(--mario-size);
+            height: calc(var(--mario-size) * 1.5);
+            left: 10%;
+            bottom: 30vh;
+            z-index: 9;
+        }
+        .mario {
+            width: 100%; height: 100%;
             position: relative;
             transform-style: preserve-3d;
             transition: transform 0.4s;
         }
-
-        .chicken.facing-left {
-            transform: rotateY(180deg);
-        }
-
-        .chicken * {
-            position: absolute;
-            background-color: #F0F0F0;
-            border: 1px solid #a0a0a0;
-            box-sizing: border-box;
-        }
-
-        /* اعضای بدن مرغ */
-        .head {
-            width: 40%;
-            height: 34%;
-            left: 30%;
-            top: -5%;
-            background-color: #e0e0e0;
-        }
-
-        .eye {
-            width: 15%;
-            height: 15%;
-            background-color: black;
-            border: none;
-            top: 30%;
-        }
-
-        .eye.left { left: 15%; }
-        .eye.right { right: 15%; }
-
-        .beak {
-            width: 20%;
-            height: 15%;
-            background-color: #FFC300;
-            border-color: #c89b00;
-            left: 40%;
-            top: 45%;
-        }
-
-        .wattle {
-            width: 16%;
-            height: 18%;
-            background-color: #C70039;
-            border-color: #a0002d;
-            left: 42%;
-            top: 60%;
-            border-radius: 0 0 4px 4px;
-        }
-
-        .body {
-            width: 100%;
-            height: 60%;
-            top: 25%;
-        }
+        .mario.facing-left { transform: rotateY(180deg); }
+        .mario-part { position: absolute; box-sizing: border-box; }
+        .hat { background-color: #ff0000; width: 70%; height: 20%; left: 15%; top: 0; }
+        .hat::before { content: ''; position: absolute; background-color: #ff0000; width: 100%; height: 40%; bottom: 100%; left: 0; }
+        .head-mario { background-color: #ffc090; width: 50%; height: 25%; left: 25%; top: 20%; }
+        .overalls { background-color: #0000ff; width: 60%; height: 30%; left: 20%; top: 45%; }
+        .arm { background-color: #ff0000; width: 20%; height: 25%; top: 48%; }
+        .arm.left { left: 0; }
+        .arm.right { right: 0; }
+        .leg-mario { background-color: #964B00; width: 25%; height: 25%; bottom: 0; }
+        .leg-mario.left { left: 15%; }
+        .leg-mario.right { right: 60%; }
         
-        .wing {
-            width: 20%;
-            height: 70%;
-            top: 10%;
-            left: -10%;
-            background-color: #d8d8d8;
-            transform-origin: top right;
-        }
+        #mario-container.walk .leg-mario.left { animation: mario-walk-left 0.4s infinite linear; }
+        #mario-container.walk .leg-mario.right { animation: mario-walk-right 0.4s infinite linear; }
+        @keyframes mario-walk-left { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes mario-walk-right { 0%, 100% { transform: translateY(-10px); } 50% { transform: translateY(0); } }
 
-        .leg {
-            width: 18%;
-            height: 35%;
-            background-color: #FFC300;
-            border-color: #c89b00;
-            bottom: -20%;
-            z-index: -1;
-            transform-origin: top center;
-        }
-
-        .leg.left { left: 20%; }
-        .leg.right { right: 20%; }
-        
-        /* انیمیشن راه رفتن */
-        #chicken-container.walk .leg.left {
-            animation: walk-left 0.5s infinite linear;
-        }
-
-        #chicken-container.walk .leg.right {
-            animation: walk-right 0.5s infinite linear;
-        }
-        
-        @keyframes walk-left {
-            0%, 100% { transform: rotate(0deg); }
-            50% { transform: rotate(30deg); }
-        }
-
-        @keyframes walk-right {
-            0%, 100% { transform: rotate(0deg); }
-            50% { transform: rotate(-30deg); }
-        }
-        
-        /* استایل تخم مرغ */
-        .egg {
-            position: absolute;
-            width: 20px;
-            height: 25px;
-            background-color: #fffbe8;
-            border: 1px solid #e0dac7;
-            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-            z-index: 5;
-            transition: all 2s ease-in, opacity 1s 2s ease-out;
-            animation: fall 0.5s cubic-bezier(0.55, 0.085, 0.68, 0.53);
-        }
-        
-        /* انیمیشن افتادن تخم مرغ */
-        @keyframes fall {
-            from {
-                transform: translateY(-30px) scale(0.8);
-            }
-            to {
-                transform: translateY(0) scale(1);
-            }
-        }
     </style>
 </head>
 <body>
 
     <div class="info">برای پریدن و تخم گذاشتن، روی مرغ کلیک کنید!</div>
+    <div id="score">امتیاز: 0</div>
+    
+    <div class="cloud cloud-1"></div>
+    <div class="cloud cloud-2"></div>
+    <div class="cloud cloud-3"></div>
+
+    <div class="ground">
+        <div class="grass"></div>
+    </div>
 
     <!-- کانتینر اصلی مرغ -->
     <div id="chicken-container" class="walk">
         <div class="chicken">
-            <div class="head">
-                <div class="eye left"></div>
-                <div class="eye right"></div>
-            </div>
-            <div class="beak"></div>
-            <div class="wattle"></div>
-            <div class="body">
-                 <div class="wing"></div>
-            </div>
-            <div class="leg left"></div>
-            <div class="leg right"></div>
+            <div class="head"><div class="eye left"></div><div class="eye right"></div></div>
+            <div class="beak"></div><div class="wattle"></div>
+            <div class="body"><div class="wing"></div></div>
+            <div class="leg left"></div><div class="leg right"></div>
+        </div>
+    </div>
+    
+    <!-- کانتینر ماریو -->
+    <div id="mario-container" class="walk">
+        <div class="mario">
+            <div class="mario-part hat"></div>
+            <div class="mario-part head-mario"></div>
+            <div class="mario-part overalls"></div>
+            <div class="mario-part arm left"></div>
+            <div class="mario-part arm right"></div>
+            <div class="mario-part leg-mario left"></div>
+            <div class="mario-part leg-mario right"></div>
         </div>
     </div>
 
     <script>
         const chickenContainer = document.getElementById('chicken-container');
         const chicken = chickenContainer.querySelector('.chicken');
+        const marioContainer = document.getElementById('mario-container');
+        const mario = marioContainer.querySelector('.mario');
+        const scoreDisplay = document.getElementById('score');
 
-        // متغیرهای مربوط به حرکت
-        let posX = window.innerWidth / 2;
-        let speed = 2;
-        let direction = 1; // 1 یعنی به راست, -1 یعنی به چپ
-        let isWalking = true;
+        // متغیرهای مرغ
+        let chickenPosX = window.innerWidth / 2;
+        let chickenSpeed = 2;
+        let chickenDirection = 1;
+        let isChickenWalking = true;
+        let chickenAnimFrameId = null;
+
+        // متغیرهای ماریو
+        let marioPosX = window.innerWidth * 0.1;
+        let marioSpeed = 1.5;
+        let marioDirection = 1;
+
+        // متغیر امتیاز
+        let score = 0;
         
-        // حرکت دادن مرغ
+        // حرکت مرغ
         function moveChicken() {
-            if (!isWalking) return;
-
-            // بررسی برخورد با لبه‌های صفحه
+            if (!isChickenWalking) return;
             const rect = chickenContainer.getBoundingClientRect();
-            if (rect.right >= window.innerWidth - 20 && direction === 1) {
-                direction = -1; // تغییر جهت به چپ
+            if (rect.right >= window.innerWidth - 20 && chickenDirection === 1) {
+                chickenDirection = -1;
                 chicken.classList.add('facing-left');
-            } else if (rect.left <= 20 && direction === -1) {
-                direction = 1; // تغییر جهت به راست
+            } else if (rect.left <= 20 && chickenDirection === -1) {
+                chickenDirection = 1;
                 chicken.classList.remove('facing-left');
             }
-            
-            posX += speed * direction;
-            chickenContainer.style.left = `${posX}px`;
-            
-            requestAnimationFrame(moveChicken);
+            chickenPosX += chickenSpeed * chickenDirection;
+            chickenContainer.style.left = `${chickenPosX}px`;
+            chickenAnimFrameId = requestAnimationFrame(moveChicken);
         }
         
-        // تغییر تصادفی حالت (راه رفتن یا ایستادن)
+        // حرکت ماریو
+        function moveMario() {
+            const rect = marioContainer.getBoundingClientRect();
+             if (rect.right >= window.innerWidth - 20 && marioDirection === 1) {
+                marioDirection = -1;
+                mario.classList.add('facing-left');
+            } else if (rect.left <= 20 && marioDirection === -1) {
+                marioDirection = 1;
+                mario.classList.remove('facing-left');
+            }
+            marioPosX += marioSpeed * marioDirection;
+            marioContainer.style.left = `${marioPosX}px`;
+            requestAnimationFrame(moveMario);
+        }
+
+        // تغییر تصادفی حالت راه رفتن مرغ
         setInterval(() => {
-            isWalking = Math.random() > 0.3; // 70% احتمال راه رفتن
-            if (isWalking) {
+            isChickenWalking = Math.random() > 0.3;
+            if (isChickenWalking) {
                 chickenContainer.classList.add('walk');
-                 // اگر در حالت ایستاده بود، دوباره انیمیشن را فعال کن
-                if (animationFrameId === null) {
-                    animationFrameId = requestAnimationFrame(moveChicken);
+                if (chickenAnimFrameId === null) {
+                    moveChicken();
                 }
             } else {
                 chickenContainer.classList.remove('walk');
-                // انیمیشن را متوقف کن
-                 if (animationFrameId !== null) {
-                    cancelAnimationFrame(animationFrameId);
-                    animationFrameId = null;
+                 if (chickenAnimFrameId !== null) {
+                    cancelAnimationFrame(chickenAnimFrameId);
+                    chickenAnimFrameId = null;
                 }
             }
-        }, 3000); // هر 3 ثانیه یکبار تصمیم می‌گیرد
-        
+        }, 3000);
 
-        // مدیریت رویداد کلیک
+        // مدیریت کلیک روی مرغ
         chickenContainer.addEventListener('click', () => {
-            // پرش
             chickenContainer.classList.add('jump');
-            setTimeout(() => {
-                chickenContainer.classList.remove('jump');
-            }, 400); // مدت زمان انیمیشن پرش
-
-            // تخم گذاشتن
+            setTimeout(() => chickenContainer.classList.remove('jump'), 400);
             layEgg();
         });
 
-        // تابع ساخت و نمایش تخم مرغ
+        // تابع تخم گذاشتن
         function layEgg() {
             const egg = document.createElement('div');
             egg.className = 'egg';
-            
             const rect = chickenContainer.getBoundingClientRect();
-            // موقعیت تخم مرغ را زیر مرغ تنظیم کن
             egg.style.left = `${rect.left + (rect.width / 2) - 10}px`;
-            egg.style.bottom = `calc(30vh - 25px)`; // دقیقا روی چمن
-
+            egg.style.bottom = `calc(30vh - 25px)`;
             document.body.appendChild(egg);
 
-            // تخم مرغ بعد از چند ثانیه محو می‌شود
+            // بروزرسانی امتیاز
+            score++;
+            scoreDisplay.textContent = `امتیاز: ${score}`;
+            scoreDisplay.classList.add('updated');
+            setTimeout(() => scoreDisplay.classList.remove('updated'), 200);
+
+            // حذف تخم مرغ
             setTimeout(() => {
                 egg.style.opacity = '0';
-                setTimeout(() => {
-                    egg.remove();
-                }, 1000);
+                setTimeout(() => egg.remove(), 1000);
             }, 3000);
         }
 
         // شروع حرکت
-        let animationFrameId = requestAnimationFrame(moveChicken);
+        moveChicken();
+        moveMario();
 
     </script>
 </body>
 </html>
+
